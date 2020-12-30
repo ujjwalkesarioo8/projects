@@ -1,0 +1,87 @@
+Create a tree structure in MySql table that could store the following tree structure:
+http://prnt.sc/wcbzth 
+
+
+
+
+CREATE TABLE machine (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  title varchar(200) NOT NULL,
+  parent_id int(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (id),
+  FOREIGN KEY (parent_id) REFERENCES machine (id) 
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Electronics',NULL);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Laptops & PC',1);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Laptops',2);
+INSERT INTO machine(title,parent_id) 
+VALUES('PC',2);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Cameras & photo',1);
+INSERT INTO machine(title,parent_id) 
+VALUES('Camera',5);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Phones & Accessories',1);
+INSERT INTO machine(title,parent_id) 
+VALUES('Smartphones',7);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Android',8);
+INSERT INTO machine(title,parent_id) 
+VALUES('iOS',8);
+INSERT INTO machine(title,parent_id) 
+VALUES('Other Smartphones',8);
+
+INSERT INTO machine(title,parent_id) 
+VALUES('Batteries',7);
+INSERT INTO machine(title,parent_id) 
+VALUES('Headsets',7);
+INSERT INTO machine(title,parent_id) 
+VALUES('Screen Protectors',7);
+
+
+1) Write a query to find the root node.
+   
+   SELECT id, title FROM machine WHERE parent_id IS NULL;
+  
+2) Write a query to find leaf node.
+
+ SELECT m1.id, m1.title FROM machine m1 LEFT JOIN machine m2 ON m2.parent_id = m1.id WHERE m2.id IS NULL
+   
+
+
+3) Write a query to find non-leaf node.
+  
+  SELECT m1.id, m1.title FROM machine m1 LEFT JOIN machine m2 ON m2.parent_id = m1.id WHERE m2.id IS NOT NULL
+   
+
+
+4) Write a query to find the path of each node. e.g. http://prnt.sc/wcc4bg
+
+    WITH RECURSIVE machine_path (id, title, path) AS 
+	( SELECT id, title, title as path FROM machine WHERE parent_id IS NULL UNION ALL 
+	SELECT m.id, m.title, CONCAT(mp.path, ' --> ', m.title) 
+	FROM machine_path AS mp JOIN machine AS m ON ,mp.id = m.parent_id ) 
+	SELECT * FROM machine_path ORDER BY path
+
+5) Write a function to calculate node level.
+ e.g. Electronics is at 0 level, Camera is on level 2 and iOs is on level 3.
+ 
+  WITH RECURSIVE machine_path (id, title, lvl) AS ( SELECT id, title, 0 lvl FROM machine WHERE parent_id IS NULL UNION ALL 
+  SELECT m.id, m.title,mp.lvl + 1 FROM machine_path AS mp JOIN machine AS m ON mp.id = m.parent_id )
+  SELECT * FROM machine_path ORDER BY lvl
+   
+6) Write a procedure to get the immediate children.
+
+  DROP PROCEDURE `getchild`; CREATE DEFINER=`root`@`localhost` PROCEDURE `getchild`(IN `uid` INT(5), OUT `result` JSON) 
+  NOT DETERMINISTIC NO SQL SQL SECURITY DEFINER BEGIN select id,title into result from machine
+  where `parent_id`=uid; END;
